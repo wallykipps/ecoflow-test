@@ -1,14 +1,14 @@
 "use client"; // Marking this file as a client-side component
-
 import { useState, useEffect } from 'react';
-import { Form, Row, Col, Badge, Stack, InputGroup, Spinner } from 'react-bootstrap'; // Importing Spinner
+import { Form, Row, Col, Badge, Stack, InputGroup, Spinner, Button } from 'react-bootstrap'; // Importing Spinner and Button
 import DataTable from 'react-data-table-component'; // Importing react-data-table-component
 import { Line, Bar } from 'react-chartjs-2'; // Importing Chart.js components
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom'; // Import chartjs-plugin-zoom
 
-// Register Chart.js components
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
+// Register Chart.js components and the zoom plugin
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, zoomPlugin);
 
 const SmartPlugData = () => {
   const currentDate = new Date().toISOString().split("T")[0]; // Get the current date in YYYY-MM-DD format
@@ -22,10 +22,9 @@ const SmartPlugData = () => {
   const [aggregationType, setAggregationType] = useState('hour'); // Default aggregation type
   const [unitType, setUnitType] = useState('wh'); // Default unit is 'wh'
 
-  // Client-side flag to check if we're on the client
   const [isClient, setIsClient] = useState(false);
 
-  // Function to fetch device data or aggregated data based on dataType and aggregationType
+  // Fetch data function
   const fetchData = async () => {
     try {
       setLoading(true); // Start loading
@@ -54,39 +53,32 @@ const SmartPlugData = () => {
     }
   };
 
-  // Set isClient to true after the component has mounted, indicating we are on the client side
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Fetch data whenever startDate, endDate, dataType, or aggregationType changes
   useEffect(() => {
     if (isClient) { // Only fetch data if on the client
       fetchData();
     }
   }, [startDate, endDate, dataType, aggregationType, unitType, isClient]);
 
-  // Handle start date change
   const handleStartDateChange = (e) => {
     setStartDate(e.target.value);
   };
 
-  // Handle end date change
   const handleEndDateChange = (e) => {
     setEndDate(e.target.value);
   };
 
-  // Handle data type change
   const handleDataTypeChange = (e) => {
     setDataType(e.target.value);
   };
 
-  // Handle aggregation type change
   const handleAggregationTypeChange = (e) => {
     setAggregationType(e.target.value);
   };
 
-  // Handle unit type toggle switch (switch between Wh/kWh)
   const handleUnitTypeChange = (e) => {
     setUnitType(e.target.checked ? 'kwh' : 'wh');
   };
@@ -94,36 +86,12 @@ const SmartPlugData = () => {
   if (loading) return <div><Spinner animation="border" /> Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
-  // Define columns for the DataTable based on the data type and unit type
-const columns = dataType === 'aggregated'
-    ? [
-        { name: 'Time', selector: row => row.time, sortable: true },
-        { name: 'Voltage', selector: row => row.volt ? row.volt.toFixed(0) : 0, sortable: true },
-        { name: 'Current', selector: row => (row.current ? (row.current / 1000).toFixed(2) : 0), sortable: true },
-        { name: 'Average Watts', selector: row => row.watts ? row.watts.toFixed(1) : 0, sortable: true },
-        { name: 'Max Watts', selector: row => row.maxWatts ? row.maxWatts.toFixed(1) : 0, sortable: true },
-        { name: 'Min Watts', selector: row => row.minWatts ? row.minWatts.toFixed(1) : 0, sortable: true },
-        { name: 'Count', selector: row => row.count || 0, sortable: true },
-        { name: 'Duration (Seconds)', selector: row => row.durationInSeconds || 0, sortable: true },
-        { name: unitType === 'wh' ? 'Wh' : 'kWh', selector: row => unitType === 'wh' ? (row.watthours ? row.watthours.toFixed(1) : 0) : (row.watthours ? (row.watthours / 1000).toFixed(2) : 0), sortable: true }
-      ]
-    : [
-        { name: 'Time', selector: row => row.updateTime, sortable: true },
-        { name: 'Switch Status', selector: row => row.switchStatus || 0, sortable: true },
-        { name: 'Country', selector: row => row.country || 0, sortable: true },
-        { name: 'Town', selector: row => row.town || 0, sortable: true },
-        { name: 'Volt', selector: row => row.volt ? row.volt.toFixed(0) : 0, sortable: true },
-        { name: 'Current', selector: row => (row.current ? (row.current / 1000).toFixed(2) : 0), sortable: true },
-        { name: 'Watts', selector: row => row.watts ? row.watts.toFixed(1) : 0, sortable: true }
-      ];
-
-  // Handle rendering the chart with the unit toggle applied
+  // Chart.js chart data
   const renderChart = () => {
     if (!aggregatedData.length) {
       return <div>There are no records to display in the chart section.</div>;
     }
 
-    // Define chart data and options
     const chartData = {
       labels: aggregatedData.map(item => item.time),
       datasets: [
@@ -145,6 +113,17 @@ const columns = dataType === 'aggregated'
           text: `Aggregated Data Chart (${aggregationType})`,
         },
       },
+      // Zoom and Pan settings
+      zoom: {
+        enabled: true,
+        mode: 'xy', // Allow zoom in both x and y axes
+        speed: 0.1, // Adjust zoom speed
+      },
+      pan: {
+        enabled: true,
+        mode: 'xy', // Allow pan in both x and y axes
+        speed: 10, // Adjust pan speed
+      },
     };
 
     return aggregationType === 'minute' ? (
@@ -154,11 +133,30 @@ const columns = dataType === 'aggregated'
     );
   };
 
+  // Function to download chart data as CSV
+  const downloadDataAsCSV = () => {
+    const data = aggregatedData.map(item => ({
+      time: item.time,
+      watts: item.watts.toFixed(1),
+      wh: unitType === 'wh' ? item.watthours.toFixed(2) : (item.watthours / 1000).toFixed(2),
+    }));
+
+    const csvContent = 'data:text/csv;charset=utf-8,' 
+      + 'Time,Watts,Wh/KWh\n' 
+      + data.map(e => `${e.time},${e.watts},${e.wh}`).join('\n');
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'aggregated_data.csv');
+    link.click();
+  };
+
   return (
     <div>
-      <h2>Smart Plug Data</h2>
+      <h3>Smart Plug Data</h3>
 
-      {/* Row for the date filters form */}
+      {/* Form for date filters */}
       <Row className="mb-4">
         <Form style={{ display: 'flex', flexWrap: 'wrap', width: '100%' }}>
           {/* Start Date */}
@@ -204,7 +202,7 @@ const columns = dataType === 'aggregated'
             </InputGroup>
           </Col>
 
-          {/* Aggregation Type (only visible when 'aggregated' is selected) */}
+          {/* Aggregation Type */}
           <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
             {dataType === 'aggregated' && (
               <InputGroup className="mb-3" style={{ display: 'flex', alignItems: 'center' }}>
@@ -224,9 +222,9 @@ const columns = dataType === 'aggregated'
         </Form>
       </Row>
 
-      {/* Unit Type Toggle Switch (Wh / kWh) */}
+      {/* Unit Type Switch */}
       <Row className="mb-4">
-        <Col >
+        <Col>
           <Form.Check
             type="switch"
             id="unitTypeSwitch"
@@ -237,71 +235,38 @@ const columns = dataType === 'aggregated'
         </Col>
       </Row>
 
-      {/* Badges Section */}
-      {loading ? (
-        <div><Spinner animation="border" /> Loading badges...</div>
-      ) : (
-        <Row>
-          <Stack direction="horizontal" gap={2}>
-            <Badge bg="primary">
-              Total kWh/Wh:{aggregatedData.reduce((acc, curr) => acc + (unitType === 'Wh' ? curr.watthours : curr.watthours / 1000), 0).toFixed(2)} {unitType === 'Wh' ? 'Wh' : 'kWh'}
-            </Badge>
-            <Badge bg="info">
-              Avg Power: {(aggregatedData.reduce((acc, curr) => acc + curr.watts, 0))/ aggregatedData.length}W
-            </Badge>
-            <Badge bg="dark">
-              Max Power: Max:{Math.max(...aggregatedData.map(item => item.maxWatts)).toFixed(2)}W
-            </Badge>
-            <Badge bg="secondary">
-              Min Power: {Math.min(...aggregatedData.map(item => item.minWatts)).toFixed(2)}W
-            </Badge>
-            <Badge bg="success">
-              Avg Volt: {(aggregatedData.reduce((acc, curr) => acc + curr.volt, 0))/ aggregatedData.length}V
-            </Badge>
-            <Badge bg="danger">
-              Avg Current: {((aggregatedData.reduce((acc, curr) => acc + curr.current, 0))/ aggregatedData.length)/1000}A
-            </Badge>
-            <Badge bg="warning" text="dark">
-              Max Current: Max :{Math.max(...aggregatedData.map(item => item.current/1000)).toFixed(2)}A
-            </Badge>
-            <Badge bg="light" text="warning" className="border border-warning">
-              Min Current: {Math.min(...aggregatedData.map(item => item.current/1000)).toFixed(2)}A
-            </Badge>
-          </Stack>
-        </Row>
-      )}
+      {/* Download Button */}
+      <Row className="mb-4">
+        <Col>
+          <Button variant="primary" onClick={downloadDataAsCSV}>Download Data as CSV</Button>
+        </Col>
+      </Row>
 
       {/* Chart Section */}
-      {loading ? (
-        <div><Spinner animation="border" /> Loading chart...</div>
-      ) : (
-        dataType === 'aggregated' && (
-          <Row className="mb-4">
-            <Col>
-              {renderChart()}
-            </Col>
-          </Row>
-        )
-      )}
+      <Row>
+        <Col>
+        {renderChart()}
+        </Col>
+      </Row>
 
-      {/* DataTable Section */}
-      {loading ? (
-        <div><Spinner animation="border" /> Loading table...</div>
-      ) : (
-        <Row>
-          <Col>
-            <h3>{dataType === 'aggregated' ? `Aggregated Data (${aggregationType})` : 'Device Data'}</h3>
-            <DataTable
-              columns={columns}
-              data={dataType === 'aggregated' ? aggregatedData : deviceData}
-              pagination
-              highlightOnHover
-              responsive
-              striped
-            />
-          </Col>
-        </Row>
-      )}
+      {/* Data Table Section */}
+      <Row>
+        <Col>
+          <h3>{dataType === 'aggregated' ? `Aggregated Data (${aggregationType})` : 'Device Data'}</h3>
+          <DataTable
+            columns={[
+              { name: 'Time', selector: row => row.time, sortable: true },
+              { name: 'Watts', selector: row => row.watts.toFixed(1), sortable: true },
+              { name: unitType === 'wh' ? 'Wh' : 'kWh', selector: row => unitType === 'wh' ? row.watthours.toFixed(1) : (row.watthours / 1000).toFixed(2), sortable: true },
+            ]}
+            data={dataType === 'aggregated' ? aggregatedData : deviceData}
+            pagination
+            highlightOnHover
+            responsive
+            striped
+          />
+        </Col>
+      </Row>
     </div>
   );
 };
