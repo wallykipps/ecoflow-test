@@ -31,7 +31,6 @@ const SmartPlugData = () => {
     interactions: { enabled: true },
   });
 
-  const [unitType, setUnitType] = useState('Wh');
   const [deviceColumnsVisibility, setDeviceColumnsVisibility] = useState({
     time: true,
     country: true,
@@ -92,39 +91,33 @@ const SmartPlugData = () => {
 
   useEffect(() => {
     fetchData();
-  }, [startDate, endDate, dataType, aggregationType]);
-
-  useEffect(() => {
-    if (aggregatedData.length > 0) {
-      updateChartData(aggregatedData);
-    }
-  }, [unitType, aggregationType, aggregatedData]);
+  }, [startDate, endDate, dataType, aggregationType, fetchData]); // Fixing missing dependencies
 
   const updateChartData = (data) => {
     const categories = data.map((item) => item.time);
-    let seriesData = data.map((item) => unitType === 'Wh' ? item.watthours : item.watthours / 1000);
+    let seriesData = data.map((item) => item.watthours / 1000);
 
     if (aggregationType === 'minute') {
       setChartOptions({
         ...chartOptions,
         chart: { type: 'line' },
         xaxis: { categories },
-        yaxis: { title: { text: `${unitType}` }, labels: { formatter: (val) => val.toFixed(2) } },
-        title: { text: `${unitType} Aggregation (Per Minute)` },
+        yaxis: { title: { text: 'kWh' }, labels: { formatter: (val) => val.toFixed(2) } },
+        title: { text: 'kWh Aggregation (Per Minute)' },
       });
     } else {
       setChartOptions({
         ...chartOptions,
         chart: { type: 'bar' },
         xaxis: { categories },
-        yaxis: { title: { text: `${unitType}` }, labels: { formatter: (val) => val.toFixed(2) } },
-        title: { text: `${unitType} Aggregation` },
+        yaxis: { title: { text: 'kWh' }, labels: { formatter: (val) => val.toFixed(2) } },
+        title: { text: 'kWh Aggregation' },
       });
     }
 
     setChartData([
       {
-        name: unitType,
+        name: 'kWh',
         data: seriesData,
       },
     ]);
@@ -231,10 +224,10 @@ const SmartPlugData = () => {
         });
         setAggregatedColumnsVisibility({
           time: true,
-          avgWatts: true,
+          avgWatts: false,
           maxWatts: false,
           minWatts: false,
-          avgVoltage: true,
+          avgVoltage: false,
           avgCurrent: true,
           count: false,
           durationInSeconds: false,
