@@ -1,7 +1,7 @@
-'use client'; // Marking this file as a client-side component
+"use client"; // Marking this file as a client-side component
 
 import { useState, useEffect } from 'react';
-import { Form, Row, Col, Badge, Stack, InputGroup } from 'react-bootstrap'; // Importing Bootstrap components
+import { Form, Row, Col, Badge, Stack, InputGroup, Spinner } from 'react-bootstrap'; // Importing Spinner
 import DataTable from 'react-data-table-component'; // Importing react-data-table-component
 import { Line, Bar } from 'react-chartjs-2'; // Importing Chart.js components
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -91,36 +91,30 @@ const SmartPlugData = () => {
     setUnitType(e.target.checked ? 'kwh' : 'wh');
   };
 
-  // Handle form submission (if needed)
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    fetchData(); // Trigger data fetch when form is submitted (optional, if you want a button)
-  };
-
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div><Spinner animation="border" /> Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
   // Define columns for the DataTable based on the data type and unit type
-  const columns = dataType === 'aggregated'
+const columns = dataType === 'aggregated'
     ? [
         { name: 'Time', selector: row => row.time, sortable: true },
-        { name: 'Voltage', selector: row => row.volt.toFixed(0), sortable: true },
-        { name: 'Current', selector: row => (row.current / 1000).toFixed(2), sortable: true },
-        { name: 'Average Watts', selector: row => row.watts.toFixed(1), sortable: true },
-        { name: 'Max Watts', selector: row => row.maxWatts.toFixed(1), sortable: true },
-        { name: 'Min Watts', selector: row => row.minWatts.toFixed(1), sortable: true },
-        { name: 'Count', selector: row => row.count, sortable: true },
-        { name: 'Duration (Seconds)', selector: row => row.durationInSeconds, sortable: true },
-        { name: unitType === 'wh' ? 'Wh' : 'kWh', selector: row => unitType === 'wh' ? row.watthours.toFixed(1) : (row.watthours / 1000).toFixed(2), sortable: true }
+        { name: 'Voltage', selector: row => row.volt ? row.volt.toFixed(0) : 0, sortable: true },
+        { name: 'Current', selector: row => (row.current ? (row.current / 1000).toFixed(2) : 0), sortable: true },
+        { name: 'Average Watts', selector: row => row.watts ? row.watts.toFixed(1) : 0, sortable: true },
+        { name: 'Max Watts', selector: row => row.maxWatts ? row.maxWatts.toFixed(1) : 0, sortable: true },
+        { name: 'Min Watts', selector: row => row.minWatts ? row.minWatts.toFixed(1) : 0, sortable: true },
+        { name: 'Count', selector: row => row.count || 0, sortable: true },
+        { name: 'Duration (Seconds)', selector: row => row.durationInSeconds || 0, sortable: true },
+        { name: unitType === 'wh' ? 'Wh' : 'kWh', selector: row => unitType === 'wh' ? (row.watthours ? row.watthours.toFixed(1) : 0) : (row.watthours ? (row.watthours / 1000).toFixed(2) : 0), sortable: true }
       ]
     : [
         { name: 'Time', selector: row => row.updateTime, sortable: true },
-        { name: 'Switch Status', selector: row => row.switchStatus, sortable: true },
-        { name: 'Country', selector: row => row.country, sortable: true },
-        { name: 'Town', selector: row => row.town, sortable: true },
-        { name: 'Volt', selector: row => row.volt.toFixed(0), sortable: true },
-        { name: 'Current', selector: row => (row.current / 1000).toFixed(2), sortable: true },
-        { name: 'Watts', selector: row => row.watts.toFixed(1), sortable: true }
+        { name: 'Switch Status', selector: row => row.switchStatus || 0, sortable: true },
+        { name: 'Country', selector: row => row.country || 0, sortable: true },
+        { name: 'Town', selector: row => row.town || 0, sortable: true },
+        { name: 'Volt', selector: row => row.volt ? row.volt.toFixed(0) : 0, sortable: true },
+        { name: 'Current', selector: row => (row.current ? (row.current / 1000).toFixed(2) : 0), sortable: true },
+        { name: 'Watts', selector: row => row.watts ? row.watts.toFixed(1) : 0, sortable: true }
       ];
 
   // Handle rendering the chart with the unit toggle applied
@@ -166,72 +160,68 @@ const SmartPlugData = () => {
 
       {/* Row for the date filters form */}
       <Row className="mb-4">
-        {/* <Col> */}
-            <Form style={{ display: 'flex', flexWrap: 'wrap', width: '100%' }}>
-            {/* Start Date */}
-            <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
+        <Form style={{ display: 'flex', flexWrap: 'wrap', width: '100%' }}>
+          {/* Start Date */}
+          <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
             <InputGroup className="mb-3" style={{ display: 'flex', alignItems: 'center' }}>
-                <InputGroup.Text style={{ minWidth: '150px' }}>
-                <i className="bi bi-calendar">Start Date:</i> {/* Optional: Add an icon */}
-                </InputGroup.Text>
-                <Form.Control 
+              <InputGroup.Text style={{ minWidth: '150px' }}>
+                <i className="bi bi-calendar">Start Date:</i>
+              </InputGroup.Text>
+              <Form.Control 
                 type="date" 
                 value={startDate} 
                 onChange={handleStartDateChange} 
                 placeholder="Start Date" 
-                />
+              />
             </InputGroup>
-            </Col>
+          </Col>
 
-            {/* End Date */}
-            <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
+          {/* End Date */}
+          <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
             <InputGroup className="mb-3" style={{ display: 'flex', alignItems: 'center' }}>
-                <InputGroup.Text style={{ minWidth: '150px' }}>
-                <i className="bi bi-calendar">End Date:</i> {/* Optional: Add an icon */}
-                </InputGroup.Text>
-                <Form.Control 
+              <InputGroup.Text style={{ minWidth: '150px' }}>
+                <i className="bi bi-calendar">End Date:</i>
+              </InputGroup.Text>
+              <Form.Control 
                 type="date" 
                 value={endDate} 
                 onChange={handleEndDateChange} 
                 placeholder="End Date" 
-                />
+              />
             </InputGroup>
-            </Col>
+          </Col>
 
-            {/* Data Type Selection */}
-            <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
+          {/* Data Type Selection */}
+          <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
             <InputGroup className="mb-3" style={{ display: 'flex', alignItems: 'center' }}>
-                <InputGroup.Text style={{ minWidth: '150px' }}>
-                <i className="bi bi-database">Data Type:</i> {/* Optional: Add an icon */}
-                </InputGroup.Text>
-                <Form.Control as="select" value={dataType} onChange={handleDataTypeChange}>
+              <InputGroup.Text style={{ minWidth: '150px' }}>
+                <i className="bi bi-database">Data Type:</i>
+              </InputGroup.Text>
+              <Form.Control as="select" value={dataType} onChange={handleDataTypeChange}>
                 <option value="aggregated">Aggregated Data</option>
                 <option value="deviceData">Device Data</option>
-                </Form.Control>
+              </Form.Control>
             </InputGroup>
-            </Col>
+          </Col>
 
-            {/* Aggregation Type (only visible when 'aggregated' is selected) */}
-            <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
-
+          {/* Aggregation Type (only visible when 'aggregated' is selected) */}
+          <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
             {dataType === 'aggregated' && (
-                <InputGroup className="mb-3" style={{ display: 'flex', alignItems: 'center' }}>
+              <InputGroup className="mb-3" style={{ display: 'flex', alignItems: 'center' }}>
                 <InputGroup.Text style={{ minWidth: '150px' }}>
-                    <i className="bi bi-clock">Aggregation Type:</i> {/* Optional: Add an icon */}
+                  <i className="bi bi-clock">Aggregation Type:</i>
                 </InputGroup.Text>
                 <Form.Control as="select" value={aggregationType} onChange={handleAggregationTypeChange}>
-                    <option value="minute">Minute</option>
-                    <option value="hour">Hour</option>
-                    <option value="day">Day</option>
-                    <option value="month">Month</option>
-                    <option value="year">Year</option>
+                  <option value="minute">Minute</option>
+                  <option value="hour">Hour</option>
+                  <option value="day">Day</option>
+                  <option value="month">Month</option>
+                  <option value="year">Year</option>
                 </Form.Control>
-                </InputGroup>
+              </InputGroup>
             )}
-                        </Col>
-
-            </Form>
-        {/* </Col> */}
+          </Col>
+        </Form>
       </Row>
 
       {/* Unit Type Toggle Switch (Wh / kWh) */}
@@ -240,65 +230,78 @@ const SmartPlugData = () => {
           <Form.Check
             type="switch"
             id="unitTypeSwitch"
-            label={unitType === 'wh' ? 'Click to tisplay in kWh' : 'Click to display in Wh'}
+            label={unitType === 'wh' ? 'Click to display in kWh' : 'Click to display in Wh'}
             checked={unitType === 'kwh'}
             onChange={handleUnitTypeChange}
           />
         </Col>
       </Row>
-      <Row>
-        <Stack direction="horizontal" gap={2}>
+
+      {/* Badges Section */}
+      {loading ? (
+        <div><Spinner animation="border" /> Loading badges...</div>
+      ) : (
+        <Row>
+          <Stack direction="horizontal" gap={2}>
             <Badge bg="primary">
-                Total kWh/Wh:{aggregatedData.reduce((acc, curr) => acc + (unitType === 'Wh' ? curr.watthours : curr.watthours / 1000), 0).toFixed(2)} {unitType === 'Wh' ? 'Wh' : 'kWh'}
+              Total kWh/Wh:{aggregatedData.reduce((acc, curr) => acc + (unitType === 'Wh' ? curr.watthours : curr.watthours / 1000), 0).toFixed(2)} {unitType === 'Wh' ? 'Wh' : 'kWh'}
             </Badge>
             <Badge bg="info">
-                Avg Power: {(aggregatedData.reduce((acc, curr) => acc + curr.watts, 0))/ aggregatedData.length}W
+              Avg Power: {(aggregatedData.reduce((acc, curr) => acc + curr.watts, 0))/ aggregatedData.length}W
             </Badge>
             <Badge bg="dark">
-                Max Power: Max:{Math.max(...aggregatedData.map(item => item.maxWatts)).toFixed(2)}W
+              Max Power: Max:{Math.max(...aggregatedData.map(item => item.maxWatts)).toFixed(2)}W
             </Badge>
             <Badge bg="secondary">
-                Min Power: {Math.min(...aggregatedData.map(item => item.minWatts)).toFixed(2)}W
+              Min Power: {Math.min(...aggregatedData.map(item => item.minWatts)).toFixed(2)}W
             </Badge>
             <Badge bg="success">
-                Avg Volt: {(aggregatedData.reduce((acc, curr) => acc + curr.volt, 0))/ aggregatedData.length}V
+              Avg Volt: {(aggregatedData.reduce((acc, curr) => acc + curr.volt, 0))/ aggregatedData.length}V
             </Badge>
             <Badge bg="danger">
-                Avg Current: {((aggregatedData.reduce((acc, curr) => acc + curr.current, 0))/ aggregatedData.length)/1000}A
+              Avg Current: {((aggregatedData.reduce((acc, curr) => acc + curr.current, 0))/ aggregatedData.length)/1000}A
             </Badge>
             <Badge bg="warning" text="dark">
-                Max Current: Max :{Math.max(...aggregatedData.map(item => item.current/1000)).toFixed(2)}A
+              Max Current: Max :{Math.max(...aggregatedData.map(item => item.current/1000)).toFixed(2)}A
             </Badge>
             <Badge bg="light" text="warning" className="border border-warning">
-                Min Current: {Math.min(...aggregatedData.map(item => item.current/1000)).toFixed(2)}A
+              Min Current: {Math.min(...aggregatedData.map(item => item.current/1000)).toFixed(2)}A
             </Badge>
-
-            </Stack>
-      </Row>
-
-      {/* Chart Section */}
-      {dataType === 'aggregated' && (
-        <Row className="mb-4">
-          <Col>
-            {renderChart()}
-          </Col>
+          </Stack>
         </Row>
       )}
 
+      {/* Chart Section */}
+      {loading ? (
+        <div><Spinner animation="border" /> Loading chart...</div>
+      ) : (
+        dataType === 'aggregated' && (
+          <Row className="mb-4">
+            <Col>
+              {renderChart()}
+            </Col>
+          </Row>
+        )
+      )}
+
       {/* DataTable Section */}
-      <Row>
-        <Col>
-          <h3>{dataType === 'aggregated' ? `Aggregated Data (${aggregationType})` : 'Device Data'}</h3>
-          <DataTable
-            columns={columns}
-            data={dataType === 'aggregated' ? aggregatedData : deviceData}
-            pagination
-            highlightOnHover
-            responsive
-            striped
-          />
-        </Col>
-      </Row>
+      {loading ? (
+        <div><Spinner animation="border" /> Loading table...</div>
+      ) : (
+        <Row>
+          <Col>
+            <h3>{dataType === 'aggregated' ? `Aggregated Data (${aggregationType})` : 'Device Data'}</h3>
+            <DataTable
+              columns={columns}
+              data={dataType === 'aggregated' ? aggregatedData : deviceData}
+              pagination
+              highlightOnHover
+              responsive
+              striped
+            />
+          </Col>
+        </Row>
+      )}
     </div>
   );
 };
