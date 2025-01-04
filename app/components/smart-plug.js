@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Form, Button, Row, Col } from 'react-bootstrap'; // Importing Bootstrap components
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const SmartPlugData = () => {
   const currentDate = new Date().toISOString().split("T")[0]; // Get the current date in YYYY-MM-DD format
