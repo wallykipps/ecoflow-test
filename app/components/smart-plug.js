@@ -1,10 +1,14 @@
-"use client"; // Marking this file as a client-side component
+'use client'; // Marking this file as a client-side component
 
 import { useState, useEffect } from 'react';
 import { Form, Row, Col } from 'react-bootstrap'; // Importing Bootstrap components
 import DataTable from 'react-data-table-component'; // Importing react-data-table-component
-import ApexCharts from 'react-apexcharts'; // Importing react-apexcharts for charting
+import { Line, Bar } from 'react-chartjs-2'; // Importing Chart.js components
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
 const SmartPlugData = () => {
   const currentDate = new Date().toISOString().split("T")[0]; // Get the current date in YYYY-MM-DD format
@@ -16,6 +20,9 @@ const SmartPlugData = () => {
   const [endDate, setEndDate] = useState(currentDate); // Default end date
   const [dataType, setDataType] = useState('aggregated'); // Default data type is 'aggregated'
   const [aggregationType, setAggregationType] = useState('hour'); // Default aggregation type
+
+  // Client-side flag to check if we're on the client
+  const [isClient, setIsClient] = useState(false);
 
   // Function to fetch device data or aggregated data based on dataType and aggregationType
   const fetchData = async () => {
@@ -46,10 +53,17 @@ const SmartPlugData = () => {
     }
   };
 
+  // Set isClient to true after the component has mounted, indicating we are on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // Fetch data whenever startDate, endDate, dataType, or aggregationType changes
   useEffect(() => {
-    fetchData();
-  }, [startDate, endDate, dataType, aggregationType]); // Dependency array triggers fetchData when any of these change
+    if (isClient) { // Only fetch data if on the client
+      fetchData();
+    }
+  }, [startDate, endDate, dataType, aggregationType, isClient]);
 
   // Handle start date change
   const handleStartDateChange = (e) => {
@@ -80,7 +94,7 @@ const SmartPlugData = () => {
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
-  // Define columns for the DataTable based on the data type (collapsed version)
+  // Define columns for the DataTable based on the data type
   const columns = dataType === 'aggregated'
     ? [
         { name: 'Time', selector: row => row.time, sortable: true },
@@ -104,34 +118,43 @@ const SmartPlugData = () => {
         { name: 'Watts', selector: row => row.watts.toFixed(1), sortable: true }
       ];
 
-  // Generate data for the chart based on aggregation type
-  const chartData = aggregatedData.map(item => ({
-    x: item.time,
-    y: item.watts // Example of using watts for the chart, can change based on aggregation type
-  }));
-
-  // Chart options, changing chart type based on aggregation type
-  const chartOptions = {
-    chart: {
-      id: 'smart-plug-chart'
-    },
-    xaxis: {
-      categories: aggregatedData.map(item => item.time)
-    },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-      }
-    },
-    title: {
-      text: 'Aggregated Data Chart'
+  // Handle rendering the chart
+  const renderChart = () => {
+    if (!aggregatedData.length) {
+      return <div>There are no records to display in the chart section.</div>;
     }
+
+    // Define chart data and options
+    const chartData = {
+      labels: aggregatedData.map(item => item.time),
+      datasets: [
+        {
+          label: 'Watts',
+          data: aggregatedData.map(item => item.watts),
+          borderColor: 'rgba(75,192,192,1)',
+          backgroundColor: 'rgba(75,192,192,0.2)',
+          borderWidth: 1,
+        },
+      ],
+    };
+
+    const chartOptions = {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: `Aggregated Data Chart (${aggregationType})`,
+        },
+      },
+    };
+
+    return aggregationType === 'minute' ? (
+      <Line data={chartData} options={chartOptions} />
+    ) : (
+      <Bar data={chartData} options={chartOptions} />
+    );
   };
 
-  // Line or bar chart conditionally based on the aggregation type
-  const chartType = aggregationType === 'minute' ? 'line' : 'bar';
-
-  // Use the DataTable component for rendering the table
   return (
     <div>
       <h2>Smart Plug Data</h2>
@@ -184,22 +207,16 @@ const SmartPlugData = () => {
         </Col>
       </Row>
 
-      {/* Apex Chart Row - Visible only when Aggregated Data is selected */}
+      {/* Chart Section */}
       {dataType === 'aggregated' && (
         <Row className="mb-4">
           <Col>
-            <h3>{`Aggregated Data Chart (${aggregationType})`}</h3>
-            <ApexCharts
-              options={chartOptions}
-              series={[{ name: 'Watts', data: chartData.map(item => item.y) }]}
-              type={chartType}
-              height={350}
-            />
+            {renderChart()}
           </Col>
         </Row>
       )}
 
-      {/* Unified DataTable for Aggregated or Device Data */}
+      {/* DataTable Section */}
       <Row>
         <Col>
           <h3>{dataType === 'aggregated' ? `Aggregated Data (${aggregationType})` : 'Device Data'}</h3>
