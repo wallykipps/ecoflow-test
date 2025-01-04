@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Form, Row, Col } from 'react-bootstrap'; // Importing Bootstrap components
+import DataTable from 'react-data-table-component'; // Importing react-data-table-component
+import ApexCharts from 'react-apexcharts'; // Importing react-apexcharts for charting
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const SmartPlugData = () => {
@@ -78,6 +80,58 @@ const SmartPlugData = () => {
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
+  // Define columns for the DataTable based on the data type (collapsed version)
+  const columns = dataType === 'aggregated'
+    ? [
+        { name: 'Time', selector: row => row.time, sortable: true },
+        { name: 'Voltage', selector: row => row.volt.toFixed(0), sortable: true },
+        { name: 'Current', selector: row => (row.current / 1000).toFixed(2), sortable: true },
+        { name: 'Average Watts', selector: row => row.watts.toFixed(1), sortable: true },
+        { name: 'Max Watts', selector: row => row.maxWatts.toFixed(1), sortable: true },
+        { name: 'Min Watts', selector: row => row.minWatts.toFixed(1), sortable: true },
+        { name: 'Count', selector: row => row.count, sortable: true },
+        { name: 'Duration (Seconds)', selector: row => row.durationInSeconds, sortable: true },
+        { name: 'Wh', selector: row => row.watthours.toFixed(1), sortable: true },
+        { name: 'kWh', selector: row => (row.watthours / 1000).toFixed(2), sortable: true }
+      ]
+    : [
+        { name: 'Time', selector: row => row.updateTime, sortable: true },
+        { name: 'Switch Status', selector: row => row.switchStatus, sortable: true },
+        { name: 'Country', selector: row => row.country, sortable: true },
+        { name: 'Town', selector: row => row.town, sortable: true },
+        { name: 'Volt', selector: row => row.volt.toFixed(0), sortable: true },
+        { name: 'Current', selector: row => (row.current / 1000).toFixed(2), sortable: true },
+        { name: 'Watts', selector: row => row.watts.toFixed(1), sortable: true }
+      ];
+
+  // Generate data for the chart based on aggregation type
+  const chartData = aggregatedData.map(item => ({
+    x: item.time,
+    y: item.watts // Example of using watts for the chart, can change based on aggregation type
+  }));
+
+  // Chart options, changing chart type based on aggregation type
+  const chartOptions = {
+    chart: {
+      id: 'smart-plug-chart'
+    },
+    xaxis: {
+      categories: aggregatedData.map(item => item.time)
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+      }
+    },
+    title: {
+      text: 'Aggregated Data Chart'
+    }
+  };
+
+  // Line or bar chart conditionally based on the aggregation type
+  const chartType = aggregationType === 'minute' ? 'line' : 'bar';
+
+  // Use the DataTable component for rendering the table
   return (
     <div>
       <h2>Smart Plug Data</h2>
@@ -130,68 +184,33 @@ const SmartPlugData = () => {
         </Col>
       </Row>
 
-      {/* Unified Table for Aggregated or Device Data */}
+      {/* Apex Chart Row - Visible only when Aggregated Data is selected */}
+      {dataType === 'aggregated' && (
+        <Row className="mb-4">
+          <Col>
+            <h3>{`Aggregated Data Chart (${aggregationType})`}</h3>
+            <ApexCharts
+              options={chartOptions}
+              series={[{ name: 'Watts', data: chartData.map(item => item.y) }]}
+              type={chartType}
+              height={350}
+            />
+          </Col>
+        </Row>
+      )}
+
+      {/* Unified DataTable for Aggregated or Device Data */}
       <Row>
         <Col>
           <h3>{dataType === 'aggregated' ? `Aggregated Data (${aggregationType})` : 'Device Data'}</h3>
-          <table>
-            <thead>
-              <tr>
-                {dataType === 'aggregated' ? (
-                  <>
-                    <th>Time</th>
-                    <th>Avg Watts</th>
-                    <th>Max Watts</th>
-                    <th>Min Watts</th>
-                    <th>Avg Voltage</th>
-                    <th>Avg Current</th>
-                    <th>Count</th>
-                    <th>Duration (Seconds)</th>
-                    <th>Wh</th>
-                    <th>kWh</th>
-                  </>
-                ) : (
-                  <>
-                    <th>Time</th>
-                    <th>Switch Status</th>
-                    <th>Country</th>
-                    <th>Town</th>
-                    <th>Volt</th>
-                    <th>Current</th>
-                    <th>Watts</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {dataType === 'aggregated'
-                ? aggregatedData.map((data, index) => (
-                    <tr key={index}>
-                      <td>{data.time}</td>
-                      <td>{data.volt}</td>
-                      <td>{data.current}</td>
-                      <td>{data.watts}</td>
-                      <td>{data.maxWatts}</td>
-                      <td>{data.minWatts}</td>
-                      <td>{data.count}</td>
-                      <td>{data.durationInSeconds}</td>
-                      <td>{data.watthours}</td>
-                      <td>{data.watthours/1000}</td>
-                    </tr>
-                  ))
-                : deviceData.map((data, index) => (
-                    <tr key={index}>
-                      <td>{data.updateTime}</td>
-                      <td>{data.switchStatus}</td>
-                      <td>{data.country}</td>
-                      <td>{data.town}</td>
-                      <td>{data.volt}</td>
-                      <td>{data.current}</td>
-                      <td>{data.watts}</td>
-                    </tr>
-                  ))}
-            </tbody>
-          </table>
+          <DataTable
+            columns={columns}
+            data={dataType === 'aggregated' ? aggregatedData : deviceData}
+            pagination
+            highlightOnHover
+            responsive
+            striped
+          />
         </Col>
       </Row>
     </div>
