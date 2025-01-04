@@ -78,8 +78,6 @@ const SmartPlugData = () => {
                 onChange={handleEndDateChange} 
               />
             </Form.Group>
-
-            <Button type="submit">Filter</Button>
           </Form>
         </Col>
       </Row>
