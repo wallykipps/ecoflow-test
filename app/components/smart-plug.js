@@ -1,7 +1,7 @@
 "use client"; // Marking this file as a client-side component
 
 import { useState, useEffect } from 'react';
-import { Form, Button, Row, Col } from 'react-bootstrap'; // Importing Bootstrap components
+import { Form, Row, Col } from 'react-bootstrap'; // Importing Bootstrap components
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const SmartPlugData = () => {
