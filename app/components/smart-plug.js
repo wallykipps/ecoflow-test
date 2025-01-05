@@ -1,7 +1,7 @@
 "use client"; // Marking this file as a client-side component
 
 import { useState, useEffect } from 'react';
-import { Form, Row, Col, Badge, Stack, InputGroup, Spinner, Container } from 'react-bootstrap'; // Importing Spinner
+import { Form, Row, Col, Badge, InputGroup, Spinner } from 'react-bootstrap'; // Importing Spinner
 import DataTable from 'react-data-table-component'; // Importing react-data-table-component
 import { Line, Bar } from 'react-chartjs-2'; // Importing Chart.js components
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -29,10 +29,10 @@ const SmartPlugData = () => {
   const [isClient, setIsClient] = useState(false);
 
   // Media Queries for responsive column hiding
-  const isXSmall = useMediaQuery({ query: '(max-width: 576px)' });
+//   const isXSmall = useMediaQuery({ query: '(max-width: 576px)' });
   const isSmall = useMediaQuery({ query: '(max-width: 768px)' });
   const isMedium = useMediaQuery({ query: '(max-width: 992px)' });
-  const isLarge = useMediaQuery({ query: '(min-width: 1200px)' });
+//   const isLarge = useMediaQuery({ query: '(min-width: 1200px)' });
 
   // Function to fetch device data or aggregated data based on dataType and aggregationType
   const fetchData = async () => {
