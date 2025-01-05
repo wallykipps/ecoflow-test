@@ -75,6 +75,16 @@ const SmartPlugData = () => {
     }
   }, [startDate, endDate, dataType, aggregationType, unitType, isClient]);
 
+  // Refresh data every 1 hour (3600000ms)
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchData();
+    }, 3600000); // 3600000ms = 1 hour
+
+    // Cleanup the interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
+  
   // Handle start date change
   const handleStartDateChange = (e) => {
     setStartDate(e.target.value);
