@@ -29,6 +29,7 @@ async function controlSmartPlug() {
     const updateTimeKenya = new Date(updateTime_.getTime() - (2 * 60 * 60 * 1000)); // Subtracting 2 hours from UTC+8 to get UTC+3
 
     const data = {
+      updateTime_: updateTime_,
       updateTime: updateTimeKenya.toISOString(), // Converted to Kenya Time
       switchStatus: properties['2_1.switchSta'],
       country: properties['2_1.country'],
